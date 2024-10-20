@@ -1,3 +1,5 @@
+// src/components/ChatBox.js
+
 import React, { useState, useEffect, useRef } from 'react';
 import io from 'socket.io-client'; // Import Socket.IO client
 import './ChatBox.css';
@@ -7,8 +9,10 @@ const Chatbox = () => {
   const [isRecording, setIsRecording] = useState(false);
   const [error, setError] = useState(null);
   const audioContextRef = useRef(null);
-  const socketRef = useRef(null); // Rename for clarity
+  const socketRef = useRef(null); // Socket.IO connection
   const mediaStreamRef = useRef(null);
+  const audioChunks = useRef([]); // To accumulate audio data
+  const audioProcessorRef = useRef(null); // To keep track of the processor
 
   // Initialize Socket.IO and Audio Context
   useEffect(() => {
@@ -24,8 +28,9 @@ const Chatbox = () => {
       console.log('Socket.IO Connection Closed');
     });
 
-    socket.on('transcript', (data) => { // Listen for 'transcript' event
+    socket.on('transcript', (data) => {
       const transcript = data.transcript;
+      console.log('Received transcript:', transcript);
       setMessages((prevMessages) => [...prevMessages, { type: 'server', text: transcript }]);
     });
 
@@ -48,25 +53,28 @@ const Chatbox = () => {
       const audioContext = new (window.AudioContext || window.webkitAudioContext)();
       audioContextRef.current = audioContext;
 
-      const source = audioContext.createMediaStreamSource(stream);
-      const processor = audioContext.createScriptProcessor(4096, 1, 1);
+      // Load the AudioWorklet module
+      await audioContext.audioWorklet.addModule('/audio-processor.js');
 
-      source.connect(processor);
-      processor.connect(audioContext.destination);
+      // Create an instance of the AudioWorkletNode
+      const audioWorkletNode = new AudioWorkletNode(audioContext, 'audio-processor');
+      audioProcessorRef.current = audioWorkletNode;
 
-      processor.onaudioprocess = (e) => {
-        if (!isRecording) return;
-
-        const inputData = e.inputBuffer.getChannelData(0); // Get audio data from the first channel
-        // Convert Float32Array to a transferable format, e.g., Int16
-        const int16Data = floatTo16BitPCM(inputData);
-        // Send the audio data as binary
-        if (socketRef.current && socketRef.current.connected) {
-          socketRef.current.emit('audio-stream', int16Data);
-        }
+      // Listen for messages from the processor
+      audioWorkletNode.port.onmessage = (event) => {
+        const int16Buffer = event.data;
+        const uint8Array = new Uint8Array(int16Buffer);
+        audioChunks.current.push(uint8Array);
+        console.log('Accumulating audio chunk:', uint8Array.length);
       };
 
+      // Connect the nodes
+      const source = audioContext.createMediaStreamSource(stream);
+      source.connect(audioWorkletNode);
+      audioWorkletNode.connect(audioContext.destination);
+
       setIsRecording(true);
+      console.log('Recording started');
     } catch (err) {
       setError('Error accessing microphone');
       console.error('Microphone access error:', err);
@@ -75,29 +83,33 @@ const Chatbox = () => {
 
   const stopRecording = () => {
     setIsRecording(false);
+    console.log('Recording stopped');
 
     // Stop the audio stream
     if (mediaStreamRef.current) {
       mediaStreamRef.current.getTracks().forEach((track) => track.stop());
     }
 
-    // Clean up the AudioContext and ScriptProcessor
+    // Clean up the AudioContext and AudioWorkletNode
     if (audioContextRef.current) {
       audioContextRef.current.close().then(() => {
         audioContextRef.current = null;
       });
     }
-  };
 
-  // Utility function to convert Float32Array to Int16Array
-  const floatTo16BitPCM = (input) => {
-    const buffer = new ArrayBuffer(input.length * 2);
-    const view = new DataView(buffer);
-    for (let i = 0; i < input.length; i++) {
-      let s = Math.max(-1, Math.min(1, input[i]));
-      view.setInt16(i * 2, s < 0 ? s * 0x8000 : s * 0x7FFF, true);
+    if (audioProcessorRef.current) {
+      audioProcessorRef.current.port.onmessage = null;
+      audioProcessorRef.current.disconnect();
+      audioProcessorRef.current = null;
     }
-    return buffer;
+
+    // Emit 'audio-stop' with the accumulated audio data
+    if (socketRef.current && socketRef.current.connected && audioChunks.current.length > 0) {
+      const audioBlob = new Blob(audioChunks.current, { type: 'audio/l16' });
+      socketRef.current.emit('audio-stop', audioBlob);
+      console.log('Emitting audio-stop with blob size:', audioBlob.size);
+      audioChunks.current = []; // Reset the chunks
+    }
   };
 
   return (

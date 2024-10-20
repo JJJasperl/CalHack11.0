@@ -1,74 +1,21 @@
+# app.py
+
 import os
-import requests
 import json
 from flask import Flask, jsonify, request
 from flask_socketio import SocketIO, emit
 from threading import Thread
-from cart.cart_handler import ShoppingCart
-import websocket
-
+import requests
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'your_secret_key'
 socketio = SocketIO(app, cors_allowed_origins="*")
 
 DEEPGRAM_API_KEY = os.getenv('DEEPGRAM_API_KEY')
-
-# Initialize the shopping cart
-cart = ShoppingCart()
+if not DEEPGRAM_API_KEY:
+    raise ValueError("DEEPGRAM_API_KEY environment variable not set.")
 
 # ---- WebSocket Chatbox Functionality ----
-
-
-
-app = Flask(__name__)
-app.config['SECRET_KEY'] = 'your_secret_key'
-socketio = SocketIO(app, cors_allowed_origins="*")
-
-DEEPGRAM_API_KEY = os.getenv('DEEPGRAM_API_KEY')
-
-# Global variables to manage Deepgram connections
-deepgram_connections = {}
-deepgram_lock = Lock()
-
-def on_deepgram_message(sid, message):
-    data = json.loads(message)
-    transcript = data.get('channel', {}).get('alternatives', [{}])[0].get('transcript', '')
-    if transcript:
-        socketio.emit('transcript', {'transcript': transcript}, room=sid)
-
-def deepgram_on_error(ws, error):
-    print(f"Deepgram WebSocket Error for SID {ws.sid}: {error}")
-    socketio.emit('transcript', {'transcript': 'Error with Deepgram transcription.'}, room=ws.sid)
-
-def deepgram_on_close(ws, close_status_code, close_msg):
-    print(f"Deepgram WebSocket Closed for SID {ws.sid}: {close_status_code}, {close_msg}")
-
-def deepgram_on_open(ws):
-    print(f"Deepgram WebSocket Opened for SID {ws.sid}")
-    # Send the configuration message
-    settings = {
-        "config": {
-            "encoding": "linear16",
-            "sample_rate": 16000,
-            "channels": 1,
-            "language": "en-US"
-        },
-        "interim_results": False
-    }
-    ws.send(json.dumps(settings))
-
-def deepgram_thread(sid):
-    ws_url = f'wss://api.deepgram.com/v1/listen?access_token={DEEPGRAM_API_KEY}&multichannel=false'
-    ws = websocket.WebSocketApp(
-        ws_url,
-        on_message=lambda ws, msg: on_deepgram_message(sid, msg),
-        on_error=lambda ws, err: deepgram_on_error(ws, err),
-        on_close=lambda ws, code, msg: deepgram_on_close(ws, code, msg),
-        on_open=lambda ws: deepgram_on_open(ws)
-    )
-    ws.sid = sid  # Assign the Socket.IO session ID to the WebSocketApp
-    ws.run_forever()
 
 @socketio.on('connect')
 def handle_connect():
@@ -77,40 +24,53 @@ def handle_connect():
 @socketio.on('disconnect')
 def handle_disconnect():
     print('Client disconnected:', request.sid)
-    # Close the Deepgram WebSocket connection if exists
-    with deepgram_lock:
-        if request.sid in deepgram_connections:
-            deepgram_connections[request.sid].close()
-            del deepgram_connections[request.sid]
 
-@socketio.on('audio-stream')
-def handle_audio_stream(data):
+@socketio.on('audio-stop')
+def handle_audio_stop(audio_blob):
     sid = request.sid
-    with deepgram_lock:
-        if sid not in deepgram_connections:
-            # Start a new Deepgram connection for this client
-            deepgram_ws = websocket.WebSocketApp(
-                f'wss://api.deepgram.com/v1/listen?access_token={DEEPGRAM_API_KEY}',
-                on_message=lambda ws, msg: on_deepgram_message(sid, msg),
-                on_error=lambda ws, err: deepgram_on_error(ws, err),
-                on_close=lambda ws, code, msg: deepgram_on_close(ws, code, msg),
-                on_open=lambda ws: deepgram_on_open(ws)
-            )
-            deepgram_connections[sid] = deepgram_ws
-            # Run WebSocket in a separate thread
-            thread = Thread(target=deepgram_ws.run_forever)
-            thread.start()
-            print(f"Started Deepgram WebSocket for SID {sid}")
+    print(f"Received 'audio-stop' from SID {sid}, blob size: {len(audio_blob)} bytes")
 
-        # Send audio data to Deepgram
+    # Save the Blob to a file for inspection
+    audio_filename = f"received_audio_{sid}.l16"
+    with open(audio_filename, "wb") as f:
+        f.write(audio_blob)
+    print(f"Saved audio data to {audio_filename}")
+
+    def deepgram_transcribe():
+        deepgram_url = 'https://api.deepgram.com/v1/listen'
+        headers = {
+            'Authorization': f'Token {DEEPGRAM_API_KEY}',
+            'Content-Type': 'audio/l16; rate=16000; channels=1',  # Must match frontend
+        }
+
         try:
-            deepgram_connections[sid].send(data, opcode=websocket.ABNF.OPCODE_BINARY)
-            print(f"Sent audio chunk to Deepgram for SID {sid}: {len(data)} bytes")
+            response = requests.post(deepgram_url, headers=headers, data=audio_blob)
+            if response.status_code == 200:
+                result = response.json()
+                transcript = result.get('results', {}).get('channels', [{}])[0].get('alternatives', [{}])[0].get('transcript', '')
+                if transcript:
+                    print(f"Transcription for SID {sid}: {transcript}")
+                    # Use socketio.emit instead of emit
+                    socketio.emit('transcript', {'transcript': transcript}, room=sid)
+                else:
+                    print(f"No transcript found for SID {sid}")
+                    socketio.emit('transcript', {'transcript': 'No transcript available.'}, room=sid)
+            else:
+                print(f"Deepgram API Error for SID {sid}: {response.status_code} - {response.text}")
+                socketio.emit('transcript', {'transcript': 'Error with Deepgram transcription.'}, room=sid)
         except Exception as e:
-            print(f"Error sending audio to Deepgram for SID {sid}: {e}")
-            emit('transcript', {'transcript': 'Error sending audio to Deepgram.'})
+            print(f"Exception during Deepgram transcription for SID {sid}: {e}")
+            socketio.emit('transcript', {'transcript': 'Exception during transcription.'}, room=sid)
+
+    # Run Deepgram transcription in a separate thread to avoid blocking
+    thread = Thread(target=deepgram_transcribe)
+    thread.start()
 
 # ---- Shopping Cart API Functionality ----
+
+# Assuming you have a ShoppingCart class defined somewhere
+from cart.cart_handler import ShoppingCart
+cart = ShoppingCart()  # Initialize the shopping cart
 
 @app.route('/')
 def index():
