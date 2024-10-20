@@ -50,16 +50,16 @@ def generatePrompting(menu_data, customer_input):
     Here is the customer input:
     {customer_input}
     
-    You need to follow the steps below:
-    1. Please compare the menu data with the user input from step 1
-    2. Generate an applicable table of the order, with 4 column: Item, Quantity, Unit Price, Custom Message
+    If user specifies the size of a meal, assign this size for all items in the combo.
+    1. Compare the menu data with the user input, make sure the SIZE is correct.
+    2. Generate a table of the order, with 4 column: Item, Quantity, Unit Price, Custom Message
     3. If you find confused description and can't fetch from the menu data, feel free to ask after the table.
     
     The return message should only be:
-    * A table of the order
+    * A table of the order with correct size input by the user
     * Follow-up Questions if needed
     
-    In the table, item name must be aligned with names in the menu data
+    In the table, item name must be aligned with names in the menu data. 
     """
     return prompt
 
@@ -95,7 +95,7 @@ pd.set_option('display.max_columns', None)
 
 
 # user_input = "我可以要一个吉士汉堡吗和一个大可乐？"
-user_input = "Can I have a large double cheese burger meal"
+user_input = "Can I have a large double cheeseburger meal"
 # user_input = "Can I have two large double cheese burger meals, one with diet cola and french fries, another with sprite"
 # user_input = "我可以要一个双层吉士汉堡大套餐吗？"
 # user_input = "1 + 1 = ？"
