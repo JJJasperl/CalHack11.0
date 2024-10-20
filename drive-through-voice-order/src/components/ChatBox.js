@@ -1,7 +1,7 @@
 // src/components/ChatBox.js
 
 import React, { useState, useEffect, useRef } from 'react';
-import io from 'socket.io-client';
+import io from 'socket.io-client'; // Import Socket.IO client
 import './ChatBox.css';
 
 const Chatbox = () => {
@@ -9,7 +9,7 @@ const Chatbox = () => {
   const [isRecording, setIsRecording] = useState(false);
   const [error, setError] = useState(null);
   const audioContextRef = useRef(null);
-  const socketRef = useRef(null);
+  const socketRef = useRef(null); // Socket.IO connection
   const mediaStreamRef = useRef(null);
   const audioChunks = useRef([]); // To accumulate audio data
   const audioProcessorRef = useRef(null); // To keep track of the processor
@@ -31,7 +31,7 @@ const Chatbox = () => {
     socket.on('transcript', (data) => {
       const transcript = data.transcript;
       console.log('Received transcript:', transcript);
-      setMessages((prevMessages) => [...prevMessages, { type: 'server', text: transcript }]);
+      addMessage('customer', transcript);
     });
 
     socket.on('connect_error', (err) => {
@@ -166,6 +166,9 @@ const Chatbox = () => {
       socketRef.current.emit('audio-stop', wavBlob);
       console.log('Emitting audio-stop with WAV blob size:', wavBlob.size);
     }
+
+    // Simulate agent response
+    simulateAgentResponse();
   };
 
   // Function to decode accumulated Uint8Array chunks into Float32Array
@@ -189,26 +192,45 @@ const Chatbox = () => {
     return float32Array;
   };
 
+  // Function to add a message to the chatbox
+  const addMessage = (sender, text) => {
+    console.log(`Adding message from ${sender}: ${text}`);
+    setMessages((prevMessages) => [...prevMessages, { sender, text }]);
+  };
+
+  // Function to simulate agent response
+  const simulateAgentResponse = () => {
+    const agentResponse = "Thank you for your message! How can I assist you further?";
+    // Simulate a delay before responding
+    setTimeout(() => {
+      addMessage('agent', agentResponse);
+    }, 1000); // 1-second delay
+  };
+
   return (
     <div className="chatbox-container">
-      <div className="chatbox-messages">
-        {messages.map((message, index) => (
-          <div key={index} className={`chatbox-message ${message.type}`}>
-            {message.text}
-          </div>
-        ))}
+      <div className="chatbox-messages" id="chatbox-messages">
+      {messages.map((message, index) => (
+        <div
+          key={index}
+          className={`chatbox-message ${message.sender === 'customer' ? 'customer' : 'agent'}`}
+        >
+          {message.text}
+        </div>
+      ))}
       </div>
 
       {error && <p className="chatbox-error">{error}</p>}
 
       <div className="chatbox-controls">
-        <button
-          onMouseDown={startRecording}
-          onMouseUp={stopRecording}
-          className="chatbox-voice-button"
-        >
-          {isRecording ? 'Recording...' : 'Hold to Speak'}
-        </button>
+      <button
+        onMouseDown={startRecording}
+        onMouseUp={stopRecording}
+        className={`chatbox-voice-button ${isRecording ? 'recording' : ''}`}
+        aria-label="Hold to speak"
+      >
+        {isRecording ? 'Recording...' : 'Hold to Speak'}
+      </button>
       </div>
     </div>
   );
