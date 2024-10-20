@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import io from 'socket.io-client'; // Import Socket.IO client
+import axios from 'axios';
 import './ChatBox.css';
 
 const Chatbox = () => {
@@ -36,9 +37,43 @@ const Chatbox = () => {
 
     // Listen for AutoGen output event
     socket.on('autogen_output', (data) => {
-      const autogenOutput = data.autogen_output;
+      let autogenOutput = data.autogen_output;
       console.log('Frontend received AutoGen Output:', autogenOutput);
+      console.log("type of autogen output:", typeof autogenOutput);
       addMessage('agent', autogenOutput);
+
+      if (typeof autogenOutput === 'string') {
+        autogenOutput = JSON.parse(autogenOutput);
+      }
+      console.log("type of autogen output 1:", typeof autogenOutput);
+      console.log("autogen output 1:", autogenOutput.transcription, autogenOutput.items);
+
+
+      const items = autogenOutput.items;
+      console.log("items:");
+      console.log(items);
+      if (items) {
+        Object.keys(items).forEach((productName) => {
+          const item = items[productName];
+          const payload = {
+            product: productName,
+            price: item.price,
+            quantity: item.quantity,
+            additional_info: item.comment,
+          };
+          console.log(payload);
+          // Send the item to the backend to add to cart
+          axios.post('http://localhost:5001/add-to-cart', payload)
+              .then((response) => {
+                console.log('Cart updated:', response.data);
+              })
+              .catch((error) => {
+                console.error('Error updating cart:', error);
+              });
+        });
+      }
+
+
     });
 
     socket.on('connect_error', (err) => {

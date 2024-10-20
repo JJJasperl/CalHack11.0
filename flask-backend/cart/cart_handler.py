@@ -5,6 +5,8 @@ class ShoppingCart:
 
     def add_item(self, product, price, quantity=1, additional_info=None):
         """Add a product to the shopping cart, or update quantity if it already exists."""
+        print(f"Adding item to cart: {product}, Quantity: {quantity}")
+
         additional_info = additional_info or ""
 
         # Check if the product already exists in the cart

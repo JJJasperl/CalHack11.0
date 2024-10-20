@@ -5,11 +5,14 @@ import json
 from flask import Flask, jsonify, request
 from flask_socketio import SocketIO, emit
 from threading import Thread
+from flask_cors import CORS
 import requests
 
 from autogen_model.model import return_menu_query_information
 
 app = Flask(__name__)
+
+CORS(app)
 app.config['SECRET_KEY'] = 'your_secret_key'
 socketio = SocketIO(app, cors_allowed_origins="*")
 
@@ -59,7 +62,7 @@ def handle_audio_stop(audio_blob):
                     # Process the transcript with AutoGen
                     # Adjust based on AutoGen's method to process text
                     autogen_output = return_menu_query_information(transcript)
-                    print(f"BackEND==========AutoGen Output for SID {sid}: {autogen_output}")
+                    # print(f"BackEND==========AutoGen Output for SID {sid}: {autogen_output}")
 
                     # Emit the AutoGen output back to the client
                     socketio.emit('autogen_output', {'autogen_output': autogen_output}, room=sid)
