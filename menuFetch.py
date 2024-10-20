@@ -42,13 +42,13 @@ def read_data(data_path, chunk_size):
         return chunk.to_string()
 
 
-def generatePrompting(menu_data, customer_input):
+def generatePrompting(customer_input):
+    data_path = "./Assets/Data/selectedColumn.csv"
+    menu_data = read_data(data_path=data_path, chunk_size=1000)
     prompt = f"""
-    Given the following menu data:
-    {menu_data}
-
     Here is the customer input:
     {customer_input}
+
     
     If user specifies the size of a meal, assign this size for all items in the combo.
     1. Compare the menu data with the user input, make sure the SIZE is correct.
@@ -80,25 +80,38 @@ def matchMenuWithUserInput(user_input):
     print(completion.choices[0].message.content)
 
 
-# Config parameters
-raw_data_path = "./Assets/Data/menu.csv"
-chunk_size = 1000 # In case data size is too large.
-preProcessData(raw_data_path, chunk_size)
+def returnMatchInfo():
+    """
+    Return match result info to query agent
+    :return: Prompt for results after comparing menu and the user input.
+    """
+    chunk_size = 1000  # In case data size is too large.
+
+    # Read Data
+    data_path = "./Assets/Data/selectedColumn.csv"
+    menu_data = read_data(data_path=data_path, chunk_size=chunk_size)
+    return generatePrompting(menu_data, user_input)
 
 
-# Read Data
-data_path = "./Assets/Data/selectedColumn.csv"
-menu_data = read_data(data_path=data_path, chunk_size=chunk_size)
 
-# Show return data
-pd.set_option('display.max_columns', None)
-
-
-# user_input = "我可以要一个吉士汉堡吗和一个大可乐？"
-user_input = "Can I have a large double cheeseburger meal"
-# user_input = "Can I have two large double cheese burger meals, one with diet cola and french fries, another with sprite"
-# user_input = "我可以要一个双层吉士汉堡大套餐吗？"
-# user_input = "1 + 1 = ？"
-# user_input = "May I have a sweet potato fries"
-# user_input = "Can I get a Chicken Nuggets Combo with medium fries."
-matchMenuWithUserInput(user_input)
+# # Config parameters
+# # raw_data_path = "./Assets/Data/menu.csv"
+# chunk_size = 1000 # In case data size is too large.
+# # preProcessData(raw_data_path, chunk_size)
+#
+#
+# # Read Data
+# data_path = "./Assets/Data/selectedColumn.csv"
+# menu_data = read_data(data_path=data_path, chunk_size=chunk_size)
+#
+# # Show return data
+# pd.set_option('display.max_columns', None)
+#
+# # user_input = "我可以要一个吉士汉堡吗和一个大可乐？"
+# user_input = "Can I have a large double cheeseburger combo meal"
+# # user_input = "Can I have two large double cheese burger meals, one with diet cola and french fries, another with sprite"
+# # user_input = "我可以要一个双层吉士汉堡大套餐吗？"
+# # user_input = "1 + 1 = ？"
+# # user_input = "May I have a sweet potato fries"
+# # user_input = "Can I get a Chicken Nuggets Combo with medium fries."
+# matchMenuWithUserInput(user_input)
