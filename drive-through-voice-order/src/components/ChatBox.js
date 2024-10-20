@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import io from 'socket.io-client'; // Import Socket.IO client
 import './ChatBox.css';
 
 const Chatbox = () => {
@@ -6,39 +7,36 @@ const Chatbox = () => {
   const [isRecording, setIsRecording] = useState(false);
   const [error, setError] = useState(null);
   const audioContextRef = useRef(null);
-  const webSocketRef = useRef(null);
+  const socketRef = useRef(null); // Rename for clarity
   const mediaStreamRef = useRef(null);
 
-  // Initialize WebSocket and Audio Context
+  // Initialize Socket.IO and Audio Context
   useEffect(() => {
-    // Initialize WebSocket connection to backend
-    const websocket = new WebSocket('ws://localhost:5000');
-    webSocketRef.current = websocket;
+    // Initialize Socket.IO connection to backend
+    const socket = io('http://localhost:5000'); // Use HTTP URL
+    socketRef.current = socket;
 
-    websocket.onmessage = (event) => {
-      const data = JSON.parse(event.data);
+    socket.on('connect', () => {
+      console.log('Socket.IO Connection Established');
+    });
+
+    socket.on('disconnect', () => {
+      console.log('Socket.IO Connection Closed');
+    });
+
+    socket.on('transcript', (data) => { // Listen for 'transcript' event
       const transcript = data.transcript;
-
-      // Add the transcript to chatbox
       setMessages((prevMessages) => [...prevMessages, { type: 'server', text: transcript }]);
-    };
+    });
 
-    websocket.onerror = (err) => {
-      setError('WebSocket Error: Could not connect to server.');
-      console.error('WebSocket Error:', err);
-    };
+    socket.on('connect_error', (err) => {
+      setError('Socket.IO Error: Could not connect to server.');
+      console.error('Socket.IO Error:', err);
+    });
 
-    websocket.onopen = () => {
-      console.log('WebSocket Connection Established');
-    };
-
-    websocket.onclose = () => {
-      console.log('WebSocket Connection Closed');
-    };
-
-    // Cleanup WebSocket on component unmount
+    // Clean up Socket.IO on component unmount
     return () => {
-      websocket.close();
+      socket.disconnect();
     };
   }, []);
 
@@ -60,11 +58,11 @@ const Chatbox = () => {
         if (!isRecording) return;
 
         const inputData = e.inputBuffer.getChannelData(0); // Get audio data from the first channel
-        const inputBuffer = new Float32Array(inputData);
-
-        // Send the audio data in real-time to the WebSocket server
-        if (webSocketRef.current && webSocketRef.current.readyState === WebSocket.OPEN) {
-          webSocketRef.current.send(inputBuffer);
+        // Convert Float32Array to a transferable format, e.g., Int16
+        const int16Data = floatTo16BitPCM(inputData);
+        // Send the audio data as binary
+        if (socketRef.current && socketRef.current.connected) {
+          socketRef.current.emit('audio-stream', int16Data);
         }
       };
 
@@ -89,6 +87,17 @@ const Chatbox = () => {
         audioContextRef.current = null;
       });
     }
+  };
+
+  // Utility function to convert Float32Array to Int16Array
+  const floatTo16BitPCM = (input) => {
+    const buffer = new ArrayBuffer(input.length * 2);
+    const view = new DataView(buffer);
+    for (let i = 0; i < input.length; i++) {
+      let s = Math.max(-1, Math.min(1, input[i]));
+      view.setInt16(i * 2, s < 0 ? s * 0x8000 : s * 0x7FFF, true);
+    }
+    return buffer;
   };
 
   return (
