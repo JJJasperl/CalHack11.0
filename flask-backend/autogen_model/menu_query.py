@@ -82,12 +82,12 @@ def testMatchMenuWithUserInput(prompt, user_input):
 
 if __name__ == "__main__":
     # Config parameters
-    raw_data_path = "../../Assets/Data/menu.csv"
+    raw_data_path = "../Assets/Data/menu.csv"
     chunk_size = 1000 # In case data size is too large.
     preProcessData(raw_data_path, chunk_size)
 
     # Read Data
-    data_path = "../../Assets/Data/selectedColumn.csv"
+    data_path = "../Assets/Data/selectedColumn.csv"
     menu_data = read_data(data_path=data_path, chunk_size=chunk_size)
 
     user_input = "Can I have a large double cheeseburger combo meal"

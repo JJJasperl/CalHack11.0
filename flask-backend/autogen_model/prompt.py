@@ -36,7 +36,7 @@ QUERY_AGENT_SYSTEM_MESSAGE = (f"""
     You are the Query Agent. Your role is to take text input from the Entry Point Agent
     and match it with valid items from the menu.
     Given the following menu data:
-    {pd.read_csv("../../Assets/Data/selectedColumn.csv")}
+    {pd.read_csv("../Assets/Data/selectedColumn.csv")}
 
     
     

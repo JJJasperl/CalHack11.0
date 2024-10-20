@@ -1,8 +1,8 @@
 from autogen import ConversableAgent
 import os
-from prompt import TERMINATE_CODE
-from util import get_system_message, get_summary_prompt
-from menu_query import generatePrompting
+from autogen_model.prompt import TERMINATE_CODE
+from autogen_model.util import get_system_message, get_summary_prompt
+from autogen_model.menu_query import generatePrompting
 
 
 def register_function(sender, receiver, func, description):
@@ -10,9 +10,9 @@ def register_function(sender, receiver, func, description):
     receiver.register_for_llm(description=description)(func)
 
 
-def return_menu_query_information():
+def return_menu_query_information(user_input):
 
-    user_input = "Can I have a large double cheeseburger combo meal"
+    # user_input = "Can I have a large double cheeseburger combo meal"
 
     # LLM config
     llm_config = {"config_list": [{"model": "gpt-4o-mini", "api_key": os.environ.get("OPENAI_API_KEY")}]}
@@ -43,3 +43,4 @@ def return_menu_query_information():
         ]
     )
     print(result[-1].summary)
+    return result[-1].summary

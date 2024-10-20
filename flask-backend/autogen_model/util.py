@@ -1,4 +1,4 @@
-from prompt import (
+from autogen_model.prompt import (
     ENTRYPOINT_AGENT_SYSTEM_MESSAGE,
     TRANSCRIPTION_SUMMARY_PROMPT,
     QUERY_AGENT_SYSTEM_MESSAGE,

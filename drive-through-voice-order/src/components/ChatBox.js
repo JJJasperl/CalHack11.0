@@ -37,7 +37,7 @@ const Chatbox = () => {
     // Listen for AutoGen output event
     socket.on('autogen_output', (data) => {
       const autogenOutput = data.autogen_output;
-      console.log('Received AutoGen Output:', autogenOutput);
+      console.log('Frontend received AutoGen Output:', autogenOutput);
       addMessage('agent', autogenOutput);
     });
 
