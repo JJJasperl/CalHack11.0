@@ -7,6 +7,8 @@ from flask_socketio import SocketIO, emit
 from threading import Thread
 import requests
 
+from autogen.model import AutoGenModel
+
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'your_secret_key'
 socketio = SocketIO(app, cors_allowed_origins="*")
@@ -53,6 +55,14 @@ def handle_audio_stop(audio_blob):
                     print(f"Transcription for SID {sid}: {transcript}")
                     # Emit the transcript back to the client
                     socketio.emit('transcript', {'transcript': transcript}, room=sid)
+                    
+                    # # Process the transcript with AutoGen
+                    # # Adjust based on AutoGen's method to process text
+                    # autogen_output = AutoGenModel.generate(transcript)
+                    # print(f"AutoGen Output for SID {sid}: {autogen_output}")
+
+                    # # Emit the AutoGen output back to the client
+                    # socketio.emit('autogen_output', {'transcript': transcript, 'autogen_output': autogen_output}, room=sid)
                 else:
                     print(f"No transcript found for SID {sid}")
                     socketio.emit('transcript', {'transcript': 'No transcript available.'}, room=sid)
