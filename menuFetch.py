@@ -6,7 +6,7 @@ import os
 def preProcessData(data_path, chunk_size):
     for chunk in pd.read_csv(data_path, chunksize=chunk_size):
         # Pick desired column names.
-        selected_column = chunk.loc[:, ["Category", "Item", "Stock"]]
+        selected_column = chunk.loc[:, ["Item", "Stock"]]
 
         # Get size info
         size_list = ["Regular", "Small", "Medium", "Large", "Child"]
@@ -22,13 +22,16 @@ def preProcessData(data_path, chunk_size):
                 new_column.append("NA")
 
         # Add one column
-        selected_column.insert(3, "Size", new_column)
+        selected_column.insert(2, "Size", new_column)
+        prices = [10]*260
+        selected_column.insert(3, "Price", prices)
 
-        print(selected_column)
+
+        # print(selected_column)
         selected_column.to_csv("./Assets/Data/selectedColumn.csv")
 
 
-def read_data(data_path):
+def read_data(data_path, chunk_size):
     """
     Read all menu data, return string for prompting.
     :param data_path[string]
@@ -46,15 +49,17 @@ def generatePrompting(menu_data, customer_input):
 
     Here is the customer input:
     {customer_input}
-    Please compare the menu data and the customer input, generate an applicable list of the order with the format 
-    and the description below. Break down to multiple items if needed. If you find confused description and can't
-    fetch from the menu data, feel free to ask.
     
-    Item, Size, Quantity, Custom Message
+    You need to follow the steps below:
+    1. Please compare the menu data with the user input from step 1
+    2. Generate an applicable table of the order, with 4 column: Item, Quantity, Unit Price, Custom Message
+    3. If you find confused description and can't fetch from the menu data, feel free to ask after the table.
     
-    For item, if there's size description like small, medium, and large, remove it and show in Size column.
-    For size, you should only include small, medium, and large, or xx piece;
-    For quantity, it should be an integer;
+    The return message should only be:
+    * A table of the order
+    * Follow-up Questions if needed
+    
+    In the table, item name must be aligned with names in the menu data
     """
     return prompt
 
@@ -66,7 +71,7 @@ def matchMenuWithUserInput(user_input):
 
     # Create a chat completion
     completion = openai.ChatCompletion.create(
-        model="gpt-3.5-turbo",
+        model="gpt-4o-mini",
         messages=[
             {"role": "system", "content": "You are a helpful assistant."},
             {"role": "user", "content": prompt}])
@@ -74,25 +79,26 @@ def matchMenuWithUserInput(user_input):
     # Print the response
     print(completion.choices[0].message.content)
 
+
 # Config parameters
 raw_data_path = "./Assets/Data/menu.csv"
 chunk_size = 1000 # In case data size is too large.
 preProcessData(raw_data_path, chunk_size)
 
 
-
 # Read Data
 data_path = "./Assets/Data/selectedColumn.csv"
-menu_data = read_data(data_path=data_path)
+menu_data = read_data(data_path=data_path, chunk_size=chunk_size)
 
 # Show return data
 pd.set_option('display.max_columns', None)
 
 
-# user_input = "May I have a double cheese burger without sauce, a medium french fries, and a large coke."
-user_input = "Can I get a Chicken Nuggets Combo with medium fries."
+# user_input = "我可以要一个吉士汉堡吗和一个大可乐？"
+user_input = "Can I have a large double cheese burger meal"
+# user_input = "Can I have two large double cheese burger meals, one with diet cola and french fries, another with sprite"
+# user_input = "我可以要一个双层吉士汉堡大套餐吗？"
+# user_input = "1 + 1 = ？"
+# user_input = "May I have a sweet potato fries"
+# user_input = "Can I get a Chicken Nuggets Combo with medium fries."
 matchMenuWithUserInput(user_input)
-
-
-
-
