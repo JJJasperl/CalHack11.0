@@ -1,0 +1,4 @@
+drive-through-voice-order/node_modules/
+flask-backend/venv/
+flask-backend/.env
+flask-backend/config.py

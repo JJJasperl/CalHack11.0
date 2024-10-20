@@ -1,0 +1,58 @@
+/* src/components/ChatBox.css */
+
+.ChatBox {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+  }
+  
+  .ChatBox-messages {
+    flex: 1;
+    overflow-y: auto;
+    margin-bottom: 20px;
+    padding: 10px;
+    border-radius: 10px;
+    background-color: #f0f4f8;
+  }
+  
+  .ChatBox-message {
+    margin-bottom: 10px;
+    padding: 10px;
+    border-radius: 10px;
+    max-width: 75%;
+  }
+  
+  .ChatBox-message.customer {
+    background-color: #a8d5e2;
+    align-self: flex-end;
+  }
+  
+  .ChatBox-message.agent {
+    background-color: #ffcccb;
+    align-self: flex-start;
+  }
+  
+  .ChatBox-input {
+    display: flex;
+    gap: 10px;
+  }
+  
+  .ChatBox-input input {
+    flex: 1;
+    padding: 10px;
+    border: 2px solid #a8d5e2;
+    border-radius: 10px;
+  }
+  
+  .ChatBox-input button {
+    padding: 10px 20px;
+    background-color: #72b7c7;
+    color: white;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+  }
+  
+  .ChatBox-input button:hover {
+    background-color: #5da3b2;
+  }

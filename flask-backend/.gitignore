@@ -1,0 +1,51 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# C extensions
+*.so
+
+# Packages
+venv/
+ENV/
+env/
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.coverage
+.coverage.*
+
+# Virtual environment
+venv/
+.env/
+.venv/
+
+# PyCharm
+.idea/
+
+# Visual Studio Code
+.vscode/
+
+# Environment variables
+.env
+*.env
+
+# Database files
+*.sqlite3
+*.db
+
+# Logs and local files
+*.log
+*.pot
+*.pyc
+*.pyo
+*.pyd
+
+# config
+config.py
