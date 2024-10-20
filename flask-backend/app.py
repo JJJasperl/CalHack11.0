@@ -108,5 +108,12 @@ def add_to_cart():
 def get_cart():
     return jsonify({"cart": cart.get_cart(), "total": cart.get_total()}), 200
 
+# @app.route('/clear-cart', methods=['POST'])
+# def clear_cart():
+#     cart = ShoppingCart()
+    
+    
+#     return jsonify({'success': True, 'message': 'Cart has been cleared.'})
+
 if __name__ == '__main__':
     socketio.run(app, debug=True, host='0.0.0.0', port=5001, allow_unsafe_werkzeug=True)
