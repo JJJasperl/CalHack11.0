@@ -13,7 +13,7 @@ const Cart = () => {
     // Set up an interval to poll the backend every few seconds
     const interval = setInterval(() => {
       fetchCart();
-    }, 5000); // Poll every 5 seconds
+    }, 1000); // Poll every 5 seconds
 
     // Clean up the interval on component unmount
     return () => clearInterval(interval);

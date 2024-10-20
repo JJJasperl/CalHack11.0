@@ -1,12 +1,57 @@
+import os
+import requests
+import json
 from flask import Flask, jsonify, request
-from flask_cors import CORS
+from flask_socketio import SocketIO, emit
+from threading import Thread
 from cart.cart_handler import ShoppingCart
 
 app = Flask(__name__)
-CORS(app)  # Enable CORS for all routes
+app.config['SECRET_KEY'] = 'your_secret_key'
+socketio = SocketIO(app, cors_allowed_origins="*")
 
-# Initialize shopping cart (for simplicity, in-memory cart)
+DEEPGRAM_API_KEY = os.getenv('DEEPGRAM_API_KEY')
+
+# Initialize the shopping cart
 cart = ShoppingCart()
+
+# ---- WebSocket Chatbox Functionality ----
+
+# WebSocket event for receiving audio and sending it to Deepgram
+@socketio.on('connect')
+def handle_connect():
+    print('Client connected')
+
+@socketio.on('disconnect')
+def handle_disconnect():
+    print('Client disconnected')
+
+@socketio.on('audio-stream')
+def handle_audio_stream(data):
+    # This function will receive audio data from the client and send it to Deepgram
+    def deepgram_stream():
+        deepgram_url = 'https://api.deepgram.com/v1/listen/stream'
+        headers = {
+            'Authorization': f'Token {DEEPGRAM_API_KEY}',
+            'Content-Type': 'audio/webm',
+        }
+
+        # Send the audio to Deepgram
+        response = requests.post(deepgram_url, headers=headers, data=data, stream=True)
+
+        for line in response.iter_lines():
+            if line:
+                decoded_line = json.loads(line.decode('utf-8'))
+                transcript = decoded_line.get('channel', {}).get('alternatives', [{}])[0].get('transcript', '')
+                if transcript:
+                    # Emit the transcript back to the frontend via WebSocket
+                    emit('transcript', {'transcript': transcript}, broadcast=True)
+
+    # Run the Deepgram streaming in a separate thread
+    thread = Thread(target=deepgram_stream)
+    thread.start()
+
+# ---- Shopping Cart API Functionality ----
 
 @app.route('/')
 def index():
@@ -31,4 +76,4 @@ def get_cart():
     return jsonify({"cart": cart.get_cart(), "total": cart.get_total()}), 200
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    socketio.run(app, debug=True, host='0.0.0.0', port=5000)

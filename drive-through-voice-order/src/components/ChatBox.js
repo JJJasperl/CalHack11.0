@@ -1,48 +1,119 @@
-// src/components/ChatBox.js
-
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import './ChatBox.css';
 
-function ChatBox({ addToCart }) {
+const Chatbox = () => {
   const [messages, setMessages] = useState([]);
-  const [inputMessage, setInputMessage] = useState('');
+  const [isRecording, setIsRecording] = useState(false);
+  const [error, setError] = useState(null);
+  const audioContextRef = useRef(null);
+  const webSocketRef = useRef(null);
+  const mediaStreamRef = useRef(null);
 
-  const handleSendMessage = () => {
-    const customerMessage = { sender: 'customer', text: inputMessage };
-    setMessages((prevMessages) => [...prevMessages, customerMessage]);
+  // Initialize WebSocket and Audio Context
+  useEffect(() => {
+    // Initialize WebSocket connection to backend
+    const websocket = new WebSocket('ws://localhost:5000');
+    webSocketRef.current = websocket;
 
-    // Simulate AI agent's response and recognized product
-    const aiMessage = { sender: 'agent', text: `Adding ${inputMessage} to your cart.` };
-    setMessages((prevMessages) => [...prevMessages, aiMessage]);
+    websocket.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+      const transcript = data.transcript;
 
-    // Simulate recognized products (this could come from the backend in a real app)
-    const recognizedProduct = { name: inputMessage, price: 10 }; // Example price
-    addToCart(recognizedProduct);
+      // Add the transcript to chatbox
+      setMessages((prevMessages) => [...prevMessages, { type: 'server', text: transcript }]);
+    };
 
-    // Clear the input
-    setInputMessage('');
+    websocket.onerror = (err) => {
+      setError('WebSocket Error: Could not connect to server.');
+      console.error('WebSocket Error:', err);
+    };
+
+    websocket.onopen = () => {
+      console.log('WebSocket Connection Established');
+    };
+
+    websocket.onclose = () => {
+      console.log('WebSocket Connection Closed');
+    };
+
+    // Cleanup WebSocket on component unmount
+    return () => {
+      websocket.close();
+    };
+  }, []);
+
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      mediaStreamRef.current = stream;
+
+      const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      audioContextRef.current = audioContext;
+
+      const source = audioContext.createMediaStreamSource(stream);
+      const processor = audioContext.createScriptProcessor(4096, 1, 1);
+
+      source.connect(processor);
+      processor.connect(audioContext.destination);
+
+      processor.onaudioprocess = (e) => {
+        if (!isRecording) return;
+
+        const inputData = e.inputBuffer.getChannelData(0); // Get audio data from the first channel
+        const inputBuffer = new Float32Array(inputData);
+
+        // Send the audio data in real-time to the WebSocket server
+        if (webSocketRef.current && webSocketRef.current.readyState === WebSocket.OPEN) {
+          webSocketRef.current.send(inputBuffer);
+        }
+      };
+
+      setIsRecording(true);
+    } catch (err) {
+      setError('Error accessing microphone');
+      console.error('Microphone access error:', err);
+    }
+  };
+
+  const stopRecording = () => {
+    setIsRecording(false);
+
+    // Stop the audio stream
+    if (mediaStreamRef.current) {
+      mediaStreamRef.current.getTracks().forEach((track) => track.stop());
+    }
+
+    // Clean up the AudioContext and ScriptProcessor
+    if (audioContextRef.current) {
+      audioContextRef.current.close().then(() => {
+        audioContextRef.current = null;
+      });
+    }
   };
 
   return (
-    <div className="ChatBox">
-      <div className="ChatBox-messages">
+    <div className="chatbox-container">
+      <div className="chatbox-messages">
         {messages.map((message, index) => (
-          <div key={index} className={`ChatBox-message ${message.sender}`}>
+          <div key={index} className={`chatbox-message ${message.type}`}>
             {message.text}
           </div>
         ))}
       </div>
-      <div className="ChatBox-input">
-        <input
-          type="text"
-          value={inputMessage}
-          onChange={(e) => setInputMessage(e.target.value)}
-          placeholder="Type your order..."
-        />
-        <button onClick={handleSendMessage}>Send</button>
+
+      {error && <p className="chatbox-error">{error}</p>}
+
+      <div className="chatbox-controls">
+        <button
+          onMouseDown={startRecording}
+          onMouseUp={stopRecording}
+          className="chatbox-voice-button"
+        >
+          {isRecording ? 'Recording...' : 'Hold to Speak'}
+        </button>
       </div>
     </div>
   );
-}
+};
 
-export default ChatBox;
+export default Chatbox;
