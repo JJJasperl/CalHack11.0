@@ -7,7 +7,7 @@ from flask_socketio import SocketIO, emit
 from threading import Thread
 import requests
 
-from autogen.model import AutoGenModel
+from autogen.model import return_menu_query_information
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'your_secret_key'
@@ -56,13 +56,13 @@ def handle_audio_stop(audio_blob):
                     # Emit the transcript back to the client
                     socketio.emit('transcript', {'transcript': transcript}, room=sid)
                     
-                    # # Process the transcript with AutoGen
-                    # # Adjust based on AutoGen's method to process text
-                    # autogen_output = AutoGenModel.generate(transcript)
-                    # print(f"AutoGen Output for SID {sid}: {autogen_output}")
+                    # Process the transcript with AutoGen
+                    # Adjust based on AutoGen's method to process text
+                    autogen_output = return_menu_query_information(transcript)
+                    print(f"AutoGen Output for SID {sid}: {autogen_output}")
 
-                    # # Emit the AutoGen output back to the client
-                    # socketio.emit('autogen_output', {'transcript': transcript, 'autogen_output': autogen_output}, room=sid)
+                    # Emit the AutoGen output back to the client
+                    socketio.emit('autogen_output', {'transcript': transcript, 'autogen_output': autogen_output}, room=sid)
                 else:
                     print(f"No transcript found for SID {sid}")
                     socketio.emit('transcript', {'transcript': 'No transcript available.'}, room=sid)
@@ -106,4 +106,4 @@ def get_cart():
     return jsonify({"cart": cart.get_cart(), "total": cart.get_total()}), 200
 
 if __name__ == '__main__':
-    socketio.run(app, debug=True, host='0.0.0.0', port=5000)
+    socketio.run(app, debug=True, host='0.0.0.0', port=5001)

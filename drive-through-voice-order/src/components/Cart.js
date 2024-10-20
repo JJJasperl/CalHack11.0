@@ -22,7 +22,7 @@ const Cart = () => {
   // Function to fetch the current cart
   const fetchCart = async () => {
     try {
-      const response = await axios.get('http://localhost:5000/cart');
+      const response = await axios.get('http://localhost:5001/cart');
       setCart(response.data.cart);
       setTotal(response.data.total);
     } catch (error) {

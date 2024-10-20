@@ -17,7 +17,7 @@ const Chatbox = () => {
   // Initialize Socket.IO and Audio Context
   useEffect(() => {
     // Initialize Socket.IO connection to backend
-    const socket = io('http://localhost:5000'); // Use HTTP URL
+    const socket = io('http://localhost:5001'); // Use HTTP URL
     socketRef.current = socket;
 
     socket.on('connect', () => {
@@ -32,6 +32,13 @@ const Chatbox = () => {
       const transcript = data.transcript;
       console.log('Received transcript:', transcript);
       addMessage('customer', transcript);
+    });
+
+    // Listen for AutoGen output event
+    socket.on('autogen_output', (data) => {
+      const autogenOutput = data.autogen_output;
+      console.log('Received AutoGen Output:', autogenOutput);
+      addMessage('agent', autogenOutput);
     });
 
     socket.on('connect_error', (err) => {
