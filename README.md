@@ -1,5 +1,7 @@
 # CalHack11.0
 
+According to a paper by Quantum Pulse, 60% to 70% of most fast food sales come from drive-thru sales.
+![alt text](./Figures/Validation%20Matrix.png)
 # Drive-Through Voice Ordering System
 
 This project is a proof-of-concept for using an AI voice agent to help place food orders in a drive-through store. It consists of two main components:

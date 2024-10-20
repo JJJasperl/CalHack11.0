@@ -1,0 +1,7 @@
+user_input = "我可以要一个吉士汉堡吗和一个大可乐？"
+user_input = "Can I have a large double cheeseburger combo meal"
+user_input = "Can I have two large double cheese burger meals, one with diet cola and french fries, another with sprite"
+user_input = "我可以要一个双层吉士汉堡大套餐吗？"
+user_input = "1 + 1 = ？"
+user_input = "May I have a sweet potato fries"
+user_input = "Can I get a Chicken Nuggets Combo with medium fries."
