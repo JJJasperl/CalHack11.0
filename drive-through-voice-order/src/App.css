@@ -1,0 +1,47 @@
+/* src/App.css */
+
+.App {
+  font-family: Arial, sans-serif;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background-color: #f7f9fc;
+}
+
+.App-header {
+  background-color: #a8d5e2;
+  padding: 20px;
+  text-align: center;
+  color: #fff;
+  border-bottom: 5px solid #72b7c7;
+}
+
+.App-header h1 {
+  margin: 0;
+  font-size: 2.5rem;
+}
+
+.App-content {
+  display: flex;
+  flex: 1;
+  padding: 20px;
+  gap: 20px;
+}
+
+.Chat-container, .Cart-container {
+  background-color: #ffffff;
+  border-radius: 15px;
+  box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+  padding: 20px;
+  flex: 1;
+}
+
+.Chat-container {
+  flex: 2;
+}
+
+.Cart-container {
+  flex: 1;
+  background-color: #fef6e4;
+  border: 2px solid #f8d7a3;
+}
