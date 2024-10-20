@@ -34,10 +34,10 @@ def handle_audio_stop(audio_blob):
     print(f"Received 'audio-stop' from SID {sid}, blob size: {len(audio_blob)} bytes")
 
     # Save the Blob to a file for inspection (optional)
-    audio_filename = f"received_audio_{sid}.wav"
-    with open(audio_filename, "wb") as f:
-        f.write(audio_blob)
-    print(f"Saved audio data to {audio_filename}")
+    # audio_filename = f"received_audio_{sid}.wav"
+    # with open(audio_filename, "wb") as f:
+    #     f.write(audio_blob)
+    # print(f"Saved audio data to {audio_filename}")
 
     def deepgram_transcribe():
         deepgram_url = 'https://api.deepgram.com/v1/listen'
