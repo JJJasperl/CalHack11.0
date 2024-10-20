@@ -1,7 +1,7 @@
 // src/components/ChatBox.js
 
 import React, { useState, useEffect, useRef } from 'react';
-import io from 'socket.io-client'; // Import Socket.IO client
+import io from 'socket.io-client';
 import './ChatBox.css';
 
 const Chatbox = () => {
@@ -9,7 +9,7 @@ const Chatbox = () => {
   const [isRecording, setIsRecording] = useState(false);
   const [error, setError] = useState(null);
   const audioContextRef = useRef(null);
-  const socketRef = useRef(null); // Socket.IO connection
+  const socketRef = useRef(null);
   const mediaStreamRef = useRef(null);
   const audioChunks = useRef([]); // To accumulate audio data
   const audioProcessorRef = useRef(null); // To keep track of the processor
@@ -101,6 +101,7 @@ const Chatbox = () => {
 
       const audioContext = new (window.AudioContext || window.webkitAudioContext)();
       audioContextRef.current = audioContext;
+      console.log('AudioContext Sample Rate:', audioContext.sampleRate); // Log sample rate
 
       // Load the AudioWorklet module
       await audioContext.audioWorklet.addModule('/audio-processor.js');
@@ -156,8 +157,9 @@ const Chatbox = () => {
     const float32Audio = decodeAudioChunks(audioChunks.current);
     audioChunks.current = []; // Reset the chunks
 
-    // Encode to WAV
-    const wavBlob = encodeWAV(float32Audio, 16000);
+    // Encode to WAV using the actual sample rate
+    const sampleRate = audioContextRef.current ? audioContextRef.current.sampleRate : 16000;
+    const wavBlob = encodeWAV(float32Audio, sampleRate);
 
     // Emit 'audio-stop' with the WAV blob
     if (socketRef.current && socketRef.current.connected && wavBlob.size > 0) {
@@ -172,18 +174,18 @@ const Chatbox = () => {
     let offset = 0;
     chunks.forEach((chunk) => {
       buffer.set(chunk, offset);
-      offset += chunk.length; 
+      offset += chunk.length;
     });
-  
+
     // Convert Uint8Array (little-endian) to Int16Array
     const int16Array = new Int16Array(buffer.buffer, buffer.byteOffset, buffer.byteLength / 2);
-  
+
     // Convert Int16Array to Float32Array
     const float32Array = new Float32Array(int16Array.length);
     for (let i = 0; i < int16Array.length; i++) {
       float32Array[i] = int16Array[i] / 0x8000;
     }
-  
+
     return float32Array;
   };
 
