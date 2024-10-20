@@ -16,8 +16,8 @@ CORS(app)
 app.config['SECRET_KEY'] = 'your_secret_key'
 socketio = SocketIO(app, cors_allowed_origins="*")
 
-# DEEPGRAM_API_KEY = os.getenv('DEEPGRAM_API_KEY')
-DEEPGRAM_API_KEY = 'afad644d7f54cb1c20aee67f2a4998686248a145'
+DEEPGRAM_API_KEY = os.getenv('DEEPGRAM_API_KEY')
+
 if not DEEPGRAM_API_KEY:
     raise ValueError("DEEPGRAM_API_KEY environment variable not set.")
 
