@@ -11,7 +11,8 @@ app = Flask(__name__)
 app.config['SECRET_KEY'] = 'your_secret_key'
 socketio = SocketIO(app, cors_allowed_origins="*")
 
-DEEPGRAM_API_KEY = os.getenv('DEEPGRAM_API_KEY')
+# DEEPGRAM_API_KEY = os.getenv('DEEPGRAM_API_KEY')
+DEEPGRAM_API_KEY = 'afad644d7f54cb1c20aee67f2a4998686248a145'
 if not DEEPGRAM_API_KEY:
     raise ValueError("DEEPGRAM_API_KEY environment variable not set.")
 
@@ -30,8 +31,8 @@ def handle_audio_stop(audio_blob):
     sid = request.sid
     print(f"Received 'audio-stop' from SID {sid}, blob size: {len(audio_blob)} bytes")
 
-    # Save the Blob to a file for inspection
-    audio_filename = f"received_audio_{sid}.l16"
+    # Save the Blob to a file for inspection (optional)
+    audio_filename = f"received_audio_{sid}.wav"
     with open(audio_filename, "wb") as f:
         f.write(audio_blob)
     print(f"Saved audio data to {audio_filename}")
@@ -40,7 +41,7 @@ def handle_audio_stop(audio_blob):
         deepgram_url = 'https://api.deepgram.com/v1/listen'
         headers = {
             'Authorization': f'Token {DEEPGRAM_API_KEY}',
-            'Content-Type': 'audio/l16; rate=16000; channels=1',  # Must match frontend
+            'Content-Type': 'audio/wav; rate=16000; channels=1',  # Must match frontend's WAV settings
         }
 
         try:
@@ -50,7 +51,7 @@ def handle_audio_stop(audio_blob):
                 transcript = result.get('results', {}).get('channels', [{}])[0].get('alternatives', [{}])[0].get('transcript', '')
                 if transcript:
                     print(f"Transcription for SID {sid}: {transcript}")
-                    # Use socketio.emit instead of emit
+                    # Emit the transcript back to the client
                     socketio.emit('transcript', {'transcript': transcript}, room=sid)
                 else:
                     print(f"No transcript found for SID {sid}")
