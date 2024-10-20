@@ -58,11 +58,11 @@ def handle_audio_stop(audio_blob):
                     
                     # Process the transcript with AutoGen
                     # Adjust based on AutoGen's method to process text
-                    # autogen_output = return_menu_query_information(transcript)
-                    # print(f"BackEND==========AutoGen Output for SID {sid}: {autogen_output}")
+                    autogen_output = return_menu_query_information(transcript)
+                    print(f"BackEND==========AutoGen Output for SID {sid}: {autogen_output}")
 
                     # Emit the AutoGen output back to the client
-                    # socketio.emit('autogen_output', {'transcript': transcript}, room=sid)
+                    socketio.emit('autogen_output', {'autogen_output': autogen_output}, room=sid)
                 else:
                     print(f"No transcript found for SID {sid}")
                     socketio.emit('transcript', {'transcript': 'No transcript available.'}, room=sid)
@@ -106,4 +106,4 @@ def get_cart():
     return jsonify({"cart": cart.get_cart(), "total": cart.get_total()}), 200
 
 if __name__ == '__main__':
-    socketio.run(app, debug=True, host='0.0.0.0', port=5001)
+    socketio.run(app, debug=True, host='0.0.0.0', port=5001, allow_unsafe_werkzeug=True)
