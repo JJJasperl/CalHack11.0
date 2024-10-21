@@ -44,3 +44,5 @@ def return_menu_query_information(user_input):
     )
     print(result[-1].summary)
     return result[-1].summary
+
+return_menu_query_information("Can I have a large double cheeseburger combo meal")
