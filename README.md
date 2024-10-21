@@ -7,7 +7,7 @@ From Orderly, you, no matter you are a customer or an owner, will get:
 * Lower employment cost
 * Higher ordering efficiency
 
-<video src="./Orderly.mp4" width="640" height="320" controls></video>
+[![Watch the video](./demo.png)](./Orderly.mp4)
 
 
 # Drive-Through Voice Ordering System
