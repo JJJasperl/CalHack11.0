@@ -16,8 +16,8 @@ CORS(app)
 app.config['SECRET_KEY'] = 'your_secret_key'
 socketio = SocketIO(app, cors_allowed_origins="*")
 
-# DEEPGRAM_API_KEY = os.getenv('DEEPGRAM_API_KEY')
-DEEPGRAM_API_KEY = 'afad644d7f54cb1c20aee67f2a4998686248a145'
+DEEPGRAM_API_KEY = os.getenv('DEEPGRAM_API_KEY')
+
 if not DEEPGRAM_API_KEY:
     raise ValueError("DEEPGRAM_API_KEY environment variable not set.")
 
@@ -107,6 +107,13 @@ def add_to_cart():
 @app.route('/cart', methods=['GET'])
 def get_cart():
     return jsonify({"cart": cart.get_cart(), "total": cart.get_total()}), 200
+
+# @app.route('/clear-cart', methods=['POST'])
+# def clear_cart():
+#     cart = ShoppingCart()
+    
+    
+#     return jsonify({'success': True, 'message': 'Cart has been cleared.'})
 
 if __name__ == '__main__':
     socketio.run(app, debug=True, host='0.0.0.0', port=5001, allow_unsafe_werkzeug=True)

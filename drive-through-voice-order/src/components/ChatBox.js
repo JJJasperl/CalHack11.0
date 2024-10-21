@@ -76,6 +76,54 @@ const Chatbox = () => {
 
     });
 
+    // Listen for AutoGen output event
+    socket.on('autogen_output', (data) => {
+      let autogenOutput = data.autogen_output;
+      console.log('Frontend received AutoGen Output:', autogenOutput);
+
+      if (typeof autogenOutput === 'string') {
+        autogenOutput = JSON.parse(autogenOutput);
+      }
+
+      console.log("AutoGen Output:", autogenOutput.transcription, autogenOutput.items);
+      console.log("autogenOutput.satisfied:", autogenOutput.satisfied);
+      console.log("autogenOutput.satisfied type:", typeof autogenOutput.satisfied);
+      
+      if (autogenOutput.satisfied ) {
+        console.log("Agent is satisfied, clearing all.");
+        clearAll(); // Clear chat and cart if agent is satisfied
+      }
+
+      // Process items (if any) and add them to the cart
+      const items = autogenOutput.items;
+      if (items) {
+        Object.keys(items).forEach((productName) => {
+          const item = items[productName];
+          const payload = {
+            product: productName,
+            price: item.price,
+            quantity: item.quantity,
+            additional_info: item.comment,
+          };
+
+          console.log("Adding item to cart:", payload);
+
+          // Send the item to the backend to add to cart
+          axios.post('http://localhost:5001/add-to-cart', payload)
+            .then((response) => {
+              console.log('Cart updated:', response.data);
+            })
+            .catch((error) => {
+              console.error('Error updating cart:', error);
+            });
+        });
+      }
+
+      // Add the agent's message to the chatbox
+      addMessage('agent', autogenOutput.transcription);
+    });
+
+
     socket.on('connect_error', (err) => {
       setError('Socket.IO Error: Could not connect to server.');
       console.error('Socket.IO Error:', err);
@@ -86,6 +134,32 @@ const Chatbox = () => {
       socket.disconnect();
     };
   }, []);
+
+  // Function to clear the cart by making a backend request
+  const clearCart = async () => {
+    try {
+      const response = await axios.post('http://localhost:5001/clear-cart');
+      if (response.data.success) {
+        console.log('Cart cleared successfully');
+      } else {
+        console.error('Failed to clear the cart:', response.data.message);
+      }
+    } catch (error) {
+      console.error('Error clearing the cart:', error);
+    }
+  };
+
+  // Function to clear chat messages in the UI
+  const clearChat = () => {
+    setMessages([]);
+    console.log('Chat cleared successfully');
+  };
+
+  const clearAll = () => {
+    console.log("Clearing both cart and chat...");
+    clearCart(); // Clear cart by making a backend request
+    clearChat(); // Clear chat messages in the UI
+  };
 
   // Utility function to write a string to DataView
   const writeString = (view, offset, string) => {
