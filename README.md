@@ -7,6 +7,9 @@ From Orderly, you, no matter you are a customer or an owner, will get:
 * Lower employment cost
 * Higher ordering efficiency
 
+#### New Layout
+![](./newLayout.png)
+
 [![Watch the video](./demo.png)](./Orderly.mp4)
 
 
